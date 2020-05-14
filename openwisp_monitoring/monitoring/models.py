@@ -130,13 +130,11 @@ class Metric(TimeStampedEditableModel):
         # problem: not within threshold limit
         elif crossed and self.is_healthy in [True, None]:
             self.is_healthy = False
-            level = 'warning'
-            verb = 'crossed threshold limit'
+            notification_type = 'threshold crossed'
         # ok: returned within threshold limit
         elif not crossed and self.is_healthy in [False, None]:
             self.is_healthy = True
-            level = 'info'
-            verb = 'returned within threshold limit'
+            notification_type = 'under threshold'
         self.save()
         threshold_crossed.send(
             sender=self.__class__,
@@ -144,7 +142,7 @@ class Metric(TimeStampedEditableModel):
             metric=self,
             target=self.content_object,
         )
-        self._notify_users(level, verb, threshold)
+        self._notify_users(notification_type, threshold)
 
     def write(self, value, time=None, database=None, check=True, extra_values=None):
         """ write timeseries data """
@@ -192,35 +190,30 @@ class Metric(TimeStampedEditableModel):
             q = '{0} LIMIT {1}'.format(q, limit)
         return list(query(q, epoch='s').get_points())
 
-    def _notify_users(self, level, verb, threshold):
+    def _notify_users(self, notification_type, threshold):
         """ creates notifications for users """
-        opts = dict(sender=self, level=level, verb=verb, action_object=threshold)
+        opts = dict(sender=self, type=notification_type, action_object=threshold)
         if self.content_object is not None:
             opts['target'] = self.content_object
         self._set_extra_notification_opts(opts)
         notify.send(**opts)
 
     def _set_extra_notification_opts(self, opts):
-        verb = opts['verb']
         target = opts.get('target')
-        metric = str(self).capitalize()
+        opts['metric'] = str(self).capitalize()
         status = 'PROBLEM' if not self.is_healthy else 'RECOVERY'
-        info = ''
         t = self.threshold
         if not self.is_healthy:
-            info = ' ({0} {1})'.format(t.get_operator_display(), t.value)
-        desc = 'Metric "{metric}" {verb}{info}.'.format(
-            status=status, metric=metric, verb=verb, info=info
+            opts['info'] = ' ({0} {1})'.format(t.get_operator_display(), t.value)
+
+        opts['email_subject'] = '[{status}] {metric}'.format(
+            status=status, metric=metric
         )
-        opts['description'] = desc
-        opts['data'] = {
-            'email_subject': '[{status}] {metric}'.format(status=status, metric=metric)
-        }
         if target and target.__class__.__name__.lower() == 'device':
             current_site = Site.objects.get_current()
             base_url = 'https://{}'.format(current_site.domain)
             device_url = reverse('admin:config_device_change', args=[target.pk])
-            opts['data']['url'] = '{}{}'.format(base_url, device_url)
+            opts['url'] = '{}{}'.format(base_url, device_url)
 
 
 class Graph(TimeStampedEditableModel):
