@@ -46,7 +46,7 @@ install:
   # temporary: remove when openwisp-utils 0.5.0 is released
   - pip install -U https://github.com/openwisp/openwisp-utils/tarball/master#egg=openwisp_utils[qa]
   # temporary: remove when openwisp-notifications is released
-  - pip install -U https://github.com/openwisp/openwisp-notifications/tarball/master
+  - pip install -U https://github.com/openwisp/openwisp-notifications/tarball/issues/1 # will change later
 
 script:
   - ./run-qa-checks
