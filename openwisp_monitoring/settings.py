@@ -14,7 +14,7 @@ register_notification_type(
         'verb': 'crossed threshold limit',
         'level': 'warning',
         'email_subject': '[{site}] {notification.level} - {notification.target} has {notification.verb}',
-        'message': 'Metric {notification.data[metric]} {notification.verb} {notification.data[info]}',
+        'message_template': 'notifications/threshold_crossed.md',
     },
 )
 
@@ -25,6 +25,6 @@ register_notification_type(
         'verb': 'returned within threshold limit',
         'level': 'info',
         'email_subject': '[{site}] {notification.level} - {notification.target} has {notification.verb}',
-        'message': 'Metric {notification.data[metric]} {notification.verb}',
+        'message_template': 'notifications/under_threshold.md',
     },
 )

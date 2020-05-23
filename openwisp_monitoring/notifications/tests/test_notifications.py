@@ -233,7 +233,9 @@ class TestNotifications(CreateConfigTemplateMixin, TestMonitoringMixin, TestCase
         self.assertEqual(n.action_object, m.threshold)
         self.assertEqual(n.level, 'info')
         self.assertEqual(n.verb, 'default verb')
-        self.assertEqual(n.message, 'Default notification with default verb and info')
+        self.assertIn(
+            'Default notification with default verb and level info', n.message
+        )
 
     def test_object_metric_multiple_notifications(self):
         testorg = self._create_org()
@@ -263,7 +265,9 @@ class TestNotifications(CreateConfigTemplateMixin, TestMonitoringMixin, TestCase
         self.assertEqual(n.action_object, om.threshold)
         self.assertEqual(n.level, 'info')
         self.assertEqual(n.verb, 'default verb')
-        self.assertEqual(n.message, 'Default notification with default verb and info')
+        self.assertIn(
+            'Default notification with default verb and level info', n.message,
+        )
         n = notification_queryset.last()
         self.assertEqual(n.recipient, staff)
         self.assertEqual(n.actor, om)
@@ -315,8 +319,8 @@ class TestNotifications(CreateConfigTemplateMixin, TestMonitoringMixin, TestCase
                 n.email_subject,
                 '[example.com] warning - None has crossed threshold limit',
             )
-            self.assertEqual(
-                n.message, 'Metric Load crossed threshold limit  (greater than 90.0)'
+            self.assertIn(
+                'Metric Load crossed threshold limit (greater than 90.0)', n.message
             )
 
         with self.subTest("Test notification for 'under threshold'"):
@@ -328,4 +332,30 @@ class TestNotifications(CreateConfigTemplateMixin, TestMonitoringMixin, TestCase
                 n.email_subject,
                 '[example.com] info - None has returned within threshold limit',
             )
-            self.assertEqual(n.message, 'Metric Load returned within threshold limit')
+            self.assertIn('Metric Load returned within threshold limit', n.message)
+
+    def test_notification_message(self):
+        self._create_admin()
+        om = self._create_object_metric(name='load')
+        self._create_threshold(metric=om, operator='>', value=90)
+        target = self._get_user()
+
+        with self.subTest("Test for metric exceeding threshold"):
+            om.write(99)
+            n = notification_queryset.first()
+            exp_message = (
+                '<p>warning : tester crossed threshold limit </p>\n'
+                '<p>Metric Load (user: tester) crossed threshold limit (greater than 90.0)\n'
+                f' Related : \n <a href="/admin/openwisp_users/user/{target.id}/change/">tester</a></p>'
+            )
+            self.assertEqual(n.message, exp_message)
+
+        with self.subTest("Test for metric falling behind threshold"):
+            om.write(70)
+            n = notification_queryset.last()
+            exp_message = (
+                '<p>info : tester returned within threshold limit </p>\n'
+                '<p>Metric Load (user: tester) returned within threshold limit \n'
+                f' Related : \n <a href="/admin/openwisp_users/user/{target.id}/change/">tester</a></p>'
+            )
+            self.assertEqual(n.message, exp_message)
