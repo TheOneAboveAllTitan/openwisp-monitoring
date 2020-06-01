@@ -28,7 +28,7 @@ Available Features
 * CSV Export of monitoring data
 * It allows you to add custom `Charts <https://github.com/openwisp/openwisp-monitoring/#openwisp_monitoring_charts>`_
 * It allows to create custom ``Metric``, select a ``Chart`` and set a ``Threshold``
-* Notifications are sent for monitoring events
+* Configurable alerts and web notifications
 
 Install Dependencies
 --------------------
@@ -425,8 +425,8 @@ view (only when using HTTP POST).
 The signal is emitted just before a successful response is returned,
 it is not sent if the response was not successful.
 
-Notifications
--------------
+Alerts and web notifications
+----------------------------
 
 OpenWISP Monitoring uses `OpenWISP Notifications <https://github.com/openwisp/openwisp-notifications>`_ 
 for managing notifications. OpenWISP Notifications provides ``notify`` signal which simplifies generation

@@ -4,6 +4,7 @@ from django.apps import AppConfig
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from requests.exceptions import ConnectionError
+from openwisp_notifications.types import register_notification_type
 
 from .utils import create_database
 
@@ -18,6 +19,7 @@ class MonitoringConfig(AppConfig):
     def ready(self):
         self.create_database()
         setattr(settings, 'OPENWISP_ADMIN_SHOW_USERLINKS_BLOCK', True)
+        self.register_notification_types()
 
     def create_database(self):
         # create influxdb database if doesn't exist yet
@@ -36,3 +38,26 @@ class MonitoringConfig(AppConfig):
             f'Retrying again in 3 seconds (attempt n. {attempt_number} out of 5).'
         )
         sleep(self.retry_delay)
+
+    def register_notification_types(self):
+        register_notification_type(
+            'threshold crossed',
+            {
+                'name': 'Monitoring Alert',
+                'verb': 'crossed threshold limit',
+                'level': 'warning',
+                'email_subject': '[{site}] WARNING - {notification.target} has crossed threshold',
+                'message_template': 'notifications/threshold_crossed.md',
+            },
+        )
+
+        register_notification_type(
+            'under threshold',
+            {
+                'name': 'Monitoring Alert',
+                'verb': 'returned within threshold limit',
+                'level': 'info',
+                'email_subject': '[{site}] INFO - {notification.target} has returned within threshold',
+                'message_template': 'notifications/under_threshold.md',
+            },
+        )
