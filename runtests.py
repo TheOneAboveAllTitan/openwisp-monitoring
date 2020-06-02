@@ -13,7 +13,7 @@ if __name__ == '__main__':
     args = sys.argv
     args.insert(1, 'test')
     if not os.environ.get('SAMPLE_APP', False):
-        args.insert(2, 'openwisp_monitoring')
+        args.insert(2, 'openwisp_monitoring.monitoring')
     else:
         args.insert(2, 'openwisp2')
         args.insert(3, 'openwisp_monitoring.notifications')

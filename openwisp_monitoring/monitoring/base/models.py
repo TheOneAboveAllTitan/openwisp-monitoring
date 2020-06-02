@@ -134,13 +134,11 @@ class AbstractMetric(TimeStampedEditableModel):
         # problem: not within threshold limit
         elif crossed and self.is_healthy in [True, None]:
             self.is_healthy = False
-            level = 'warning'
-            verb = 'crossed threshold limit'
+            notification_type = 'threshold crossed'
         # ok: returned within threshold limit
         elif not crossed and self.is_healthy in [False, None]:
             self.is_healthy = True
-            level = 'info'
-            verb = 'returned within threshold limit'
+            notification_type = 'under threshold'
         self.save()
         threshold_crossed.send(
             sender=self.__class__,
@@ -148,7 +146,9 @@ class AbstractMetric(TimeStampedEditableModel):
             metric=self,
             target=self.content_object,
         )
-        self._notify_users(level, verb, threshold)
+        print('dfdfds')
+        self._notify_users(notification_type, threshold)
+        print("return from notify_users")
 
     def write(self, value, time=None, database=None, check=True, extra_values=None):
         """ write timeseries data """
@@ -196,13 +196,17 @@ class AbstractMetric(TimeStampedEditableModel):
             q = '{0} LIMIT {1}'.format(q, limit)
         return list(query(q, epoch='s').get_points())
 
-    def _notify_users(self, level, verb, threshold):
+    def _notify_users(self, notification_type, threshold):
+        print("lol")
         """ creates notifications for users """
-        opts = dict(sender=self, level=level, verb=verb, action_object=threshold)
-        if self.content_object is not None:
-            opts['target'] = self.content_object
-        self._set_extra_notification_opts(opts)
+        opts = dict(sender=self)
+        # opts = dict(sender=self, type=nptification_type, action_object=threshold)
+        # if self.content_object is not None:
+        #     opts['target'] = self.content_object
+        # self._set_extra_notification_opts(opts)
+        print('priint')
         notify.send(**opts)
+        print("return from send")
 
     def _set_extra_notification_opts(self, opts):
         verb = opts['verb']
